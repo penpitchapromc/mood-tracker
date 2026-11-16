@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f3ed">
+  <title>Little by Little — Mood Tracker</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f5f3ed;
+      --card: #fffdf8;
+      --white: #fff;
+      --ink: #3d342e;
+      --muted: #8f887f;
+      --line: #eee7dc;
+      --accent: #bd7850;
+      --accent-dark: #995d3d;
+      --accent-pale: #fff3e6;
+      --focus: #326f9c;
+      --danger: #a33d34;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+    }
+    * { box-sizing: border-box; }
+    body { min-width: 320px; margin: 0; background: var(--paper); color: var(--ink); }
+    button, textarea { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, textarea:focus-visible, input:focus-visible + label { outline: 3px solid var(--focus); outline-offset: 3px; }
+    .shell { width: min(100% - 32px, 640px); margin: 0 auto; padding: 26px 0 48px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; min-height: 36px; color: var(--muted); font-size: 12px; }
+    .brand { color: var(--ink); font: 19px Georgia, "Times New Roman", serif; }
+    .today { text-align: right; }
+    .hero { margin: 34px 0 22px; }
+    h1 { margin: 0; font: 500 clamp(32px, 7vw, 43px)/1.09 Georgia, "Times New Roman", serif; letter-spacing: -.045em; }
+    .intro { margin: 9px 0 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
+    .card { padding: clamp(17px, 5vw, 24px); border: 1px solid var(--line); border-radius: 18px; background: var(--card); box-shadow: 0 8px 28px #3b2b1b08; }
+    fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+    legend, .section-title { margin: 0 0 12px; color: #8f7969; font-size: 11px; font-weight: 750; letter-spacing: .11em; text-transform: uppercase; }
+    .moods { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .choice { position: relative; min-width: 0; }
+    .choice input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; clip-path: inset(50%); }
+    .mood-label { display: flex; min-height: 76px; flex-direction: column; align-items: center; justify-content: center; gap: 5px; padding: 9px 5px; border: 1px solid var(--line); border-radius: 13px; background: var(--white); color: #64594f; cursor: pointer; font-size: 12px; transition: background .15s, border-color .15s, transform .15s; }
+    .mood-label:hover { transform: translateY(-1px); border-color: #d8bca6; }
+    .mood-emoji { font-size: 22px; line-height: 1; }
+    .choice input:checked + .mood-label { border-color: var(--accent); background: var(--accent-pale); box-shadow: inset 0 0 0 1px var(--accent); color: #6f4934; }
+    .choice input:focus-visible + .mood-label { outline: 3px solid var(--focus); outline-offset: 2px; }
+    .rating-wrap { margin-top: 19px; }
+    .rating-heading { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 9px; color: #766c63; font-size: 12px; }
+    .rating-ends { color: #a1988d; font-size: 11px; }
+    .ratings { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+    .rating-label { display: grid; min-height: 42px; place-items: center; border: 1px solid var(--line); border-radius: 10px; background: var(--white); color: #82776d; cursor: pointer; font-size: 13px; transition: background .15s, border-color .15s; }
+    .choice input:checked + .rating-label { border-color: var(--accent); background: var(--accent); color: white; font-weight: 750; }
+    .choice input:focus-visible + .rating-label { outline: 3px solid var(--focus); outline-offset: 2px; }
+    .note-wrap { margin-top: 17px; }
+    .note-wrap label { display: block; margin-bottom: 7px; color: #766c63; font-size: 12px; }
+    textarea { display: block; width: 100%; min-height: 76px; resize: vertical; padding: 11px 12px; border: 1px solid var(--line); border-radius: 11px; background: var(--white); color: var(--ink); font-size: 13px; line-height: 1.5; }
+    textarea::placeholder { color: #a9a096; }
+    .save-row { display: flex; align-items: center; gap: 12px; margin-top: 13px; }
+    .save { min-height: 46px; flex: 1; border: 0; border-radius: 999px; background: var(--accent); color: #fffaf5; font-size: 13px; font-weight: 750; transition: background .15s, transform .15s; }
+    .save:hover { transform: translateY(-1px); background: var(--accent-dark); }
+    .saved-status { min-width: 0; color: #65764e; font-size: 11px; }
+    .notice { margin: 0 0 16px; padding: 12px 14px; border: 1px solid #e6d6c3; border-radius: 12px; background: #fff8ed; color: #705a45; font-size: 13px; line-height: 1.45; }
+    .notice.error { border-color: #e6bcb7; background: #fff1ef; color: #782b24; }
+    .history { margin-top: 28px; }
+    .history-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 0 2px 7px; }
+    .history-head h2 { margin: 0; color: #8f7969; font-size: 11px; font-weight: 750; letter-spacing: .11em; text-transform: uppercase; }
+    .count { color: #a49b91; font-size: 11px; }
+    .entry-list { overflow: hidden; border: 1px solid var(--line); border-radius: 15px; background: var(--card); }
+    .entry { display: flex; align-items: center; gap: 12px; padding: 14px 15px; }
+    .entry + .entry { border-top: 1px solid var(--line); }
+    .entry-emoji { display: grid; width: 40px; height: 40px; flex: 0 0 40px; place-items: center; border-radius: 13px; background: #f7eee5; font-size: 20px; }
+    .entry-body { min-width: 0; flex: 1; }
+    .entry-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px 8px; }
+    .entry-top strong { font-size: 13px; }
+    .entry-time { color: #a39a90; font-size: 11px; }
+    .entry-note { margin: 4px 0 0; overflow-wrap: anywhere; color: #71685f; font-size: 12px; line-height: 1.45; white-space: pre-wrap; }
+    .entry-score { flex: 0 0 auto; color: #9f6646; font-size: 12px; font-weight: 750; }
+    .delete { display: grid; width: 32px; height: 32px; flex: 0 0 32px; place-items: center; border: 0; border-radius: 9px; background: transparent; color: #9b9086; font-size: 16px; }
+    .delete:hover { background: #fff0ed; color: var(--danger); }
+    .empty { padding: 25px 16px; color: #8c837a; text-align: center; font-size: 13px; line-height: 1.6; }
+    .empty span { display: block; margin-bottom: 7px; font-size: 24px; }
+    .privacy { margin: 16px 5px 0; color: #a39a90; text-align: center; font-size: 11px; line-height: 1.5; }
+    .privacy strong { color: #82796f; font-weight: 650; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    @media (max-width: 430px) {
+      .shell { width: min(100% - 24px, 640px); padding-top: 18px; }
+      .hero { margin-top: 27px; }
+      .moods { gap: 6px; }
+      .mood-label { min-height: 70px; font-size: 11px; }
+      .entry { gap: 9px; padding: 12px 11px; }
+      .entry-score { font-size: 11px; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">little by little</div>
+      <div class="today" id="today-label"></div>
+    </header>
+
+    <section class="hero" aria-labelledby="page-title">
+      <h1 id="page-title">How are you<br>arriving today?</h1>
+      <p class="intro">A small check-in, just for you.</p>
+    </section>
+
+    <div id="notice" class="notice" role="alert" hidden></div>
+
+    <form id="checkin-form" class="card">
+      <fieldset>
+        <legend>Choose what fits</legend>
+        <div class="moods" id="mood-options">
+          <div class="choice"><input type="radio" name="mood" id="mood-happy" value="Happy" required><label class="mood-label" for="mood-happy"><span class="mood-emoji" aria-hidden="true">😊</span>Happy</label></div>
+          <div class="choice"><input type="radio" name="mood" id="mood-calm" value="Calm" required><label class="mood-label" for="mood-calm"><span class="mood-emoji" aria-hidden="true">😌</span>Calm</label></div>
+          <div class="choice"><input type="radio" name="mood" id="mood-okay" value="Okay" required><label class="mood-label" for="mood-okay"><span class="mood-emoji" aria-hidden="true">🙂</span>Okay</label></div>
+          <div class="choice"><input type="radio" name="mood" id="mood-sad" value="Sad" required><label class="mood-label" for="mood-sad"><span class="mood-emoji" aria-hidden="true">😔</span>Sad</label></div>
+          <div class="choice"><input type="radio" name="mood" id="mood-anxious" value="Anxious" required><label class="mood-label" for="mood-anxious"><span class="mood-emoji" aria-hidden="true">😟</span>Anxious</label></div>
+          <div class="choice"><input type="radio" name="mood" id="mood-irritated" value="Irritated" required><label class="mood-label" for="mood-irritated"><span class="mood-emoji" aria-hidden="true">😤</span>Irritated</label></div>
+        </div>
+      </fieldset>
+
+      <fieldset class="rating-wrap">
+        <legend class="rating-heading"><span>How strong is it?</span><span class="rating-ends">1 = very low &nbsp; · &nbsp; very high = 5</span></legend>
+        <div class="ratings" id="rating-options">
+          <div class="choice"><input type="radio" name="rating" id="rating-1" value="1" required><label class="rating-label" for="rating-1">1</label></div>
+          <div class="choice"><input type="radio" name="rating" id="rating-2" value="2" required><label class="rating-label" for="rating-2">2</label></div>
+          <div class="choice"><input type="radio" name="rating" id="rating-3" value="3" required><label class="rating-label" for="rating-3">3</label></div>
+          <div class="choice"><input type="radio" name="rating" id="rating-4" value="4" required><label class="rating-label" for="rating-4">4</label></div>
+          <div class="choice"><input type="radio" name="rating" id="rating-5" value="5" required><label class="rating-label" for="rating-5">5</label></div>
+        </div>
+      </fieldset>
+
+      <div class="note-wrap">
+        <label for="note">A note, if you'd like <span class="sr-only">(optional)</span></label>
+        <textarea id="note" name="note" maxlength="1000" placeholder="Anything you'd like to remember about this moment?"></textarea>
+      </div>
+      <div class="save-row">
+        <button class="save" type="submit">Save check-in</button>
+        <span class="saved-status" id="saved-status" role="status" aria-live="polite"></span>
+      </div>
+    </form>
+
+    <section class="history" aria-labelledby="history-title">
+      <div class="history-head">
+        <h2 id="history-title">Recent moments</h2>
+        <span class="count" id="entry-count"></span>
+      </div>
+      <div class="entry-list" id="entry-list" aria-live="polite"></div>
+      <p class="privacy"><strong>Just for you.</strong> Your check-ins are saved only in this browser on this device. Clearing browser data or switching devices may remove them.</p>
+    </section>
+  </main>
+
+  <script>
+    "use strict";
+    const STORAGE_KEY = "little-by-little.mood-entries.v1";
+    const MOODS = {
+      Happy: "😊",
+      Calm: "😌",
+      Okay: "🙂",
+      Sad: "😔",
+      Anxious: "😟",
+      Irritated: "😤"
+    };
+    const form = document.querySelector("#checkin-form");
+    const entryList = document.querySelector("#entry-list");
+    const notice = document.querySelector("#notice");
+    const status = document.querySelector("#saved-status");
+    const count = document.querySelector("#entry-count");
+    let entries = [];
+    let storageReady = false;
+
+    function setNotice(message, isError) {
+      notice.textContent = message;
+      notice.classList.toggle("error", Boolean(isError));
+      notice.hidden = !message;
+    }
+
+    function validEntry(entry) {
+      return entry && typeof entry.id === "string" &&
+        typeof entry.mood === "string" && Object.hasOwn(MOODS, entry.mood) &&
+        Number.isInteger(entry.rating) && entry.rating >= 1 && entry.rating <= 5 &&
+        typeof entry.note === "string" && typeof entry.createdAt === "string" &&
+        !Number.isNaN(Date.parse(entry.createdAt));
+    }
+
+    function loadEntries() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw === null) {
+          entries = [];
+        } else {
+          const parsed = JSON.parse(raw);
+          if (!Array.isArray(parsed) || !parsed.every(validEntry)) {
+            throw new Error("Saved data has an unexpected format.");
+          }
+          entries = parsed;
+        }
+        storageReady = true;
+        setNotice("", false);
+        return true;
+      } catch (error) {
+        storageReady = false;
+        setNotice("I couldn't read the saved check-ins in this browser, so I haven't changed them. Your history is hidden to avoid showing misleading information. Try reopening this page in the browser where you saved it.", true);
+        return false;
+      }
+    }
+
+    function saveEntries() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+        storageReady = true;
+        setNotice("", false);
+        return true;
+      } catch (error) {
+        storageReady = false;
+        setNotice("This browser couldn't save the check-in. Check that browser storage is available, then try again.", true);
+        return false;
+      }
+    }
+
+    function formatDateTime(value) {
+      return new Intl.DateTimeFormat(undefined, {
+        weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit"
+      }).format(new Date(value));
+    }
+
+    function render() {
+      entryList.replaceChildren();
+      const sorted = [...entries].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+      count.textContent = storageReady ? `${sorted.length} ${sorted.length === 1 ? "check-in" : "check-ins"}` : "";
+
+      if (!storageReady) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "History is unavailable until the saved data can be read.";
+        entryList.append(empty);
+        return;
+      }
+      if (sorted.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        const icon = document.createElement("span");
+        icon.setAttribute("aria-hidden", "true");
+        icon.textContent = "✧";
+        empty.append(icon, document.createTextNode("Your moments will gather here.\nWhenever you're ready, add your first check-in above."));
+        entryList.append(empty);
+        return;
+      }
+
+      for (const entry of sorted) {
+        const row = document.createElement("article");
+        row.className = "entry";
+        const emoji = document.createElement("span");
+        emoji.className = "entry-emoji";
+        emoji.setAttribute("aria-hidden", "true");
+        emoji.textContent = MOODS[entry.mood];
+        const body = document.createElement("div");
+        body.className = "entry-body";
+        const top = document.createElement("div");
+        top.className = "entry-top";
+        const mood = document.createElement("strong");
+        mood.textContent = entry.mood;
+        const time = document.createElement("time");
+        time.className = "entry-time";
+        time.dateTime = entry.createdAt;
+        time.textContent = formatDateTime(entry.createdAt);
+        top.append(mood, time);
+        body.append(top);
+        if (entry.note) {
+          const note = document.createElement("p");
+          note.className = "entry-note";
+          note.textContent = entry.note;
+          body.append(note);
+        }
+        const score = document.createElement("span");
+        score.className = "entry-score";
+        score.textContent = `${entry.rating} / 5`;
+        const remove = document.createElement("button");
+        remove.className = "delete";
+        remove.type = "button";
+        remove.textContent = "×";
+        remove.setAttribute("aria-label", `Delete ${entry.mood} check-in from ${formatDateTime(entry.createdAt)}`);
+        remove.addEventListener("click", () => deleteEntry(entry.id));
+        row.append(emoji, body, score, remove);
+        entryList.append(row);
+      }
+    }
+
+    function deleteEntry(id) {
+      if (!storageReady) return;
+      const previous = entries;
+      entries = entries.filter(entry => entry.id !== id);
+      if (!saveEntries()) {
+        entries = previous;
+      }
+      status.textContent = entries.length < previous.length ? "Check-in deleted." : "";
+      render();
+    }
+
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+      if (!storageReady) {
+        setNotice("Saved data isn't available right now, so a new check-in can't be added safely.", true);
+        return;
+      }
+      if (!form.reportValidity()) return;
+      const data = new FormData(form);
+      const mood = String(data.get("mood"));
+      const rating = Number(data.get("rating"));
+      const entry = {
+        id: (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`),
+        mood,
+        rating,
+        note: String(data.get("note") || "").trim(),
+        createdAt: new Date().toISOString()
+      };
+      entries.push(entry);
+      if (!saveEntries()) {
+        entries.pop();
+        return;
+      }
+      form.reset();
+      status.textContent = "Check-in saved.";
+      render();
+    });
+
+    document.querySelector("#today-label").textContent = new Intl.DateTimeFormat(undefined, {
+      weekday: "short", month: "short", day: "numeric"
+    }).format(new Date()).toUpperCase();
+    loadEntries();
+    render();
+  </script>
+</body>
+</html>
